@@ -1,0 +1,118 @@
+# global image
+image: "python:3.8"
+
+# Change pip's cache directory to be inside the project directory since we can
+# only cache local items.
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+# Cache packages in between builds
+cache: &global_cache
+  # YAML anchor
+  # This value ensures that each branch has its own cache. Can't use a
+  # cross-branch static key because we only update the cache if setup.cfg
+  # has changed from the previous commit in the current branch. This means
+  # that the first CI of a branch will be slow (i think, unless it inherits
+  # from parent branch...)
+  key: $CI_COMMIT_REF_SLUG
+  # paths are relative to $CI_PROJECT_DIR
+  paths:
+    # we save pip's cache directory to save virtualenv
+    - .cache/pip
+    # we save the .venv to save tox and black
+    - .venv/
+    # we save .tox to save its virtual environments and installed packages
+    - .tox/
+  # the cache can be read and updated
+  policy: pull-push
+
+# This runs after cache and artifacts are restored for each job (stage) but
+# before the job's 'script'
+before_script:
+  # Print out Python version for debugging
+  - python -V
+  # We install virtualenv if it has not been restored from the cache
+  - pip install virtualenv
+  # This does not overwrite installed packages (i.e. those in the cached
+  # copy (which has been restored))
+  - virtualenv .venv
+  # This activates the environment
+  - source .venv/bin/activate
+  # Will not change anything if latest tox and black already installed
+  - pip install tox black
+
+# the stages are the jobs which must be completed for pipeline to succeed
+stages:
+  #- lint  # deactivated for now
+  - test
+  - build
+  - deploy
+
+# Checks that all files in the repository have been linted with black
+#lint:
+#  image: pyfound/black:22.1.0
+#  script:
+#    - black src/* --check --verbose --diff --color #--line-length 79
+#  stage: lint
+
+# The leading . indicates a hidden job which we use as a template here. This
+# template is used to extend tox_create_cache and tox_use_cache which are
+# exclusive to each other so only one will ever be run as a job for any run of
+# the pipeline.
+# Tox builds the package and runs tests, pipeline fails if either of these
+# steps fails. We use tox-ci.ini as it has GITLAB_CI passed through to the tox
+# environment. If we used this outside the Gitlab CI environment tox would
+# fail.
+test:
+  # retry: 2
+  script:
+    - tox
+  stage: test
+
+# Added from old .gitlab-ci.yml, haven't reviewed yet
+build:
+  artifacts:
+    paths:
+      - dist/*.whl
+  cache:
+    policy: pull
+  script:
+    - tox -e build
+  stage: build
+
+deploy:
+  cache:
+    policy: pull
+  only:
+    - tags
+  script:
+    - tox -e build
+    - tox -e publish -- $TOX_EXTRA_ARG
+
+  stage: deploy
+
+#pages:
+#  artifacts:
+#    # Make the public directory an artifact, this will then automatically
+#    # create the pages website
+#    paths:
+#      - public
+#  # disable the cache because tags create there own branch making a cache
+#  # unnecessary
+#  cache: []
+#  # Run this job on a tag of format v#.#.# or v#.#.#.pages#. Use the second
+#  # format to build a new version of the pages website without also running
+#  # the build-deploy job
+#  ##############################################################
+#  # Make sure to only push tags on gitlab-ci verified commits! #
+#  ##############################################################
+#  only:
+#    - tags
+#  script:
+#    # Create the website using sphinx-doc via tox
+#    - tox -e docs
+#    # The pages website is only made from an artifact of the public directory
+#    # of a job so we move the html docs there
+#    - mv docs/_build/html/ public
+#  stage: pages
+
