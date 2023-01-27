@@ -39,17 +39,21 @@ gprn:environment:service:placeholder:type-id:resource-id
 - *service*: mandatory. The service, application, api, etc... on which the resource can be found. Ex: `myapi`, `rnaseqdb`, etc...
 - *placeholder*: is a placeholder, in case another segment is required. (it's `region` in original ARNs)
 
-At the point, the segments allow to uniquely describe a service, on a specific environment. Ex:
+At this point, the segments allow to uniquely describe a service, on a specific environment. Ex:
+
 - `gprn::myapi` means "the service `myapi`, production environment"
-- `gprn:dev:myapi` means "the service `myapi, development environment"
+- `gprn:dev:myapi` means "the service `myapi`, development environment"
 
 Continuing further, we can describe resources within services:
+
 - *type-id*: optional if *resource-id* not specified, otherwise required. Type of resource described in *resource-id*
 - *resource-id*: optional if *type-id* not specficied, otherwise required. ID of type *type-id* within the service.
 
 Ex:
+
 - `gprn::myapi::artifact:PROJ1:report.html@3` means the Artifact ID `PROJ1:report.html@3` in `myapi`, production.
 - `gprn::myapi::project:PROJ1` means project `PROJ1` within `myapi`, production
 - `gprn::myapi::project:PROJ1@3` means project `PROJ1`, version `3`, within `myapi`, production
 - `gprn::myapi::doc` means the documentation for `myapi` API.
+
 
