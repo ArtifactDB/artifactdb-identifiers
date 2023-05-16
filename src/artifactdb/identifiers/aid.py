@@ -79,9 +79,9 @@ def unpack_id(_id: str) -> Dict[str, str]:
             # That said... the parsing result in the end is not correct... Assuming that code is dead for now, with a warning
             # to see if it resurrects...
             logging.critical(f"Parsing an ArtifactDB ID starting with a `gprn:` notation, not supported: {_id!r}")
-            project_id, _, path, version = match(r"^(gprn(:.*?){5}.*?):(.*)@([\w\d-]+)",_id).groups()
+            project_id, _, path, version = match(r"^(gprn(:.*?){5}.*?):(.*)@([.\w\d-]+)",_id).groups()
         else:
-            project_id, path, version = match(r"^(.*?):(.*?)@([\w\d-]+)",_id).groups()
+            project_id, path, version = match(r"^(.*?):(.*?)@([.\w\d-]+)",_id).groups()
         assert project_id, "can't unpack project_id from '%s'" % _id
         assert path, "can't unpack path from '%s'" % _id
         assert version, "can't unpack version from '%s'" % _id
