@@ -201,5 +201,7 @@ def generate_key(parts: Dict[str, str]) -> str:
         A str of the format: `"<project_id>/<version>/<path>"`
     """
     project_id, path, version = _get_parts(parts)
+    # normalize in case if has double //
+    path = path.strip("/")
 
     return f"{project_id}/{version}/{path}"
